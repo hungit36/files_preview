@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:files_preview/common/app_bar.dart';
 import 'package:files_preview/files_preview.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +17,7 @@ class FilesPreviewScreen extends StatefulWidget {
 }
 
 class _FilesPreviewScreenState extends State<FilesPreviewScreen> {
+   File _file = File('');
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,7 +31,11 @@ class _FilesPreviewScreenState extends State<FilesPreviewScreen> {
             Expanded(
               child: Container(
                 color: Colors.white,
-                child: openFile(path: widget.path.replaceAll(' ', ''))
+                child: openFile(path: widget.path.replaceAll(' ', ''), fileName: widget.appBarString, file: (file) {
+                  setState(() {
+                    _file = file;
+                  });
+                },)
               ),
             ),
           ],
@@ -39,14 +46,15 @@ class _FilesPreviewScreenState extends State<FilesPreviewScreen> {
 
   Widget _buldRightNaBar() {
     return IconButton(
-        icon: SvgPicture.asset('assets/icon_share.svg'),
+        icon: SvgPicture.asset('assets/icon_share.svg', color: _file.existsSync() == false ? Colors.grey : Colors.black,),
         onPressed: () async{
+          if ( _file.existsSync() == false) return;
           final box = context.findRenderObject() as RenderBox?;
 
-          await Share.share(
-            widget.path,
-            sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
-          );
+          final files = <XFile>[XFile(_file.path, name: widget.appBarString)];
+          
+      await Share.shareXFiles(files,
+          sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size);
         },
         padding: EdgeInsets.zero,
         iconSize: 50,

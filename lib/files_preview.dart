@@ -18,7 +18,7 @@ class FilesPreview {
   }
 }
 
-Widget openFile({required String path, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45)}) {
+Widget openFile({required String path, required String fileName, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45), required FutureOr<void> Function(File) file}) {
   final extension = path.split('.').last.split('?').first;
   FilesType type = FilesType.Other;
   switch (extension.toLowerCase()) {
@@ -55,16 +55,18 @@ Widget openFile({required String path, TextStyle textStyle = const TextStyle(col
       break;
     default: break;
   }
-  return PreviewScreen(path: path, type: type, textStyle: textStyle, empty: empty, errorStype: errorStype);
+  return PreviewScreen(path: path, type: type, textStyle: textStyle, empty: empty, errorStype: errorStype, file: file, fileName: fileName);
 }
 // ignore: constant_identifier_names
 enum FilesType {Pdf, Image, Video, Audio, Other}
 class PreviewScreen extends StatefulWidget {
-  const PreviewScreen({super.key, required this.path, required this.type, required this.textStyle, required this.errorStype, this.empty});
+  const PreviewScreen({super.key, required this.path, required this.fileName, required this.type, required this.textStyle, required this.errorStype, this.empty, required this.file});
   final String path;
+  final String fileName;
   final FilesType type;
   final TextStyle textStyle;
   final TextStyle errorStype;
+  final FutureOr<void> Function(File) file;
   final Widget? empty;
 
   @override
@@ -92,47 +94,48 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
   @override
   void initState() {
     super.initState();
-    switch (widget.type) {
-      case FilesType.Pdf:
-        createFileOfPdfUrl().then((f) {
-          setState(() {
-            _remotePDFpath = f.path;
-            _updatePage();
-          });
-        });
-        _focusNode.addListener(() {
-          if (!_focusNode.hasFocus) {
-            
-          }
-        });
-        break;
-      case FilesType.Audio:
-      _audio.setUrl(           // Load a URL
-        widget.path
-      ).then((value) {
-        setState(() {});
-        _audio.positionStream.listen((event) {
-           setState(() {
-            if (_audio.position == _audio.duration) {
-              _audio.stop();
-            }
-           });
-        });
-      }); 
-      break;
-      case FilesType.Video:
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(
-        widget.path))
-        ..initialize().then((_) {
-          // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
-          setState(() {});
-          _videoController.addListener(() {                       //custom Listner
+    createFileOfPdfUrl().then((f) {
+      widget.file(f);
+        switch (widget.type) {
+          case FilesType.Pdf:
+            setState(() {
+              _remotePDFpath = f.path;
+              _updatePage();
+            });
+            _focusNode.addListener(() {
+              if (!_focusNode.hasFocus) {
+                
+              }
+            });
+            break;
+          case FilesType.Audio:
+          _audio.setUrl(           // Load a URL
+            widget.path
+          ).then((value) {
             setState(() {});
-          });
-        });
-        break;
-      default:
-    }
+            _audio.positionStream.listen((event) {
+              setState(() {
+                if (_audio.position == _audio.duration) {
+                  _audio.stop();
+                }
+              });
+            });
+          }); 
+          break;
+          case FilesType.Video:
+            _videoController = VideoPlayerController.networkUrl(Uri.parse(
+            widget.path))
+            ..initialize().then((_) {
+              // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+              setState(() {});
+              _videoController.addListener(() {                       //custom Listner
+                setState(() {});
+              });
+            });
+            break;
+          default:
+        }
+    });
   }
 
   @override
@@ -480,14 +483,13 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
     Completer<File> completer = Completer();
     print("Start download file from internet!");
     try {
-      final filename = widget.path.substring(widget.path.lastIndexOf("/") + 1);
       var request = await HttpClient().getUrl(Uri.parse(widget.path));
       var response = await request.close();
       var bytes = await consolidateHttpClientResponseBytes(response);
       var dir = await getApplicationDocumentsDirectory();
       print("Download files");
-      print("${dir.path}/$filename");
-      File file = File("${dir.path}/$filename");
+      print("${dir.path}/${widget.fileName}");
+      File file = File("${dir.path}/${widget.fileName}");
 
       await file.writeAsBytes(bytes, flush: true);
       completer.complete(file);
