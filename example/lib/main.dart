@@ -36,9 +36,18 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+
+  
+  bool _isDownloading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -50,77 +59,95 @@ class HomeScreen extends StatelessWidget {
           const AppBarCustom(title: "Files Preview"),
           
           Expanded(
-            child: ListView(
-              children: <Widget>[
-                _buildItem(
-                  context,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FilesPreviewScreen(appBarString: 'image-colorful-galaxy-sky-generative-ai_791316-9864.jpg', path: 'https://img.freepik.com/premium-photo/image-colorful-galaxy-sky-generative-ai_791316-9864.jpg?w=2000',),
-                      ),
-                    );
-                  },
-                  text: "Image Preview",
+            child: Stack(
+              children: [ListView(
+                children: <Widget>[
+                  _buildItem(
+                    context,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FilesPreviewScreen(appBarString: 'image-colorful-galaxy-sky-generative-ai_791316-9864.jpg', path: 'https://img.freepik.com/premium-photo/image-colorful-galaxy-sky-generative-ai_791316-9864.jpg?w=2000',),
+                        ),
+                      );
+                    },
+                    text: "Image Preview",
+                  ),
+                  _buildItem(
+                    context,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FilesPreviewScreen(appBarString: 'bee.mp4', path: 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',),
+                        ),
+                      );
+                    },
+                    text: "Video Preview",
+                  ),
+                  _buildItem(
+                    context,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FilesPreviewScreen(appBarString: 'pdf.pdf', path: 'http://www.pdf995.com/samples/pdf.pdf',),
+                        ),
+                      );
+                    },
+                    text: "PDF Preview",
+                  ),
+                  _buildItem(
+                    context,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FilesPreviewScreen(appBarString: 'Opening Themes - Introduction.mp3', path: 'https://scummbar.com/mi2/MI1-CD/01%20-%20Opening%20Themes%20-%20Introduction.mp3',),
+                        ),
+                      );
+                    },
+                    text: "Audio Preview",
+                  ),
+                  _buildItem(
+                    context,
+                    onPressed: () {
+                      const path = 'https://drive.google.com/file/d/1WARMcVTn29h_VPglToLrXVsqdN7auoK7/view?usp=drive_link';
+                      const name = 'Financial.zip';
+                      _createFileOfUrl(path, name).then((f) {
+                          openFileLocal(context, f.path, (success) async {
+                            if (!success) {
+                              Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FilesPreviewScreen(appBarString: name, path: f.path,),
+                              ),
+                            );
+                            }
+                          });
+                      });
+                      
+                    },
+                      text: "Unknow Preview",
+                    ),
+                  ],
                 ),
-                _buildItem(
-                  context,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FilesPreviewScreen(appBarString: 'bee.mp4', path: 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',),
-                      ),
-                    );
-                  },
-                  text: "Video Preview",
-                ),
-                _buildItem(
-                  context,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FilesPreviewScreen(appBarString: 'pdf.pdf', path: 'http://www.pdf995.com/samples/pdf.pdf',),
-                      ),
-                    );
-                  },
-                  text: "PDF Preview",
-                ),
-                _buildItem(
-                  context,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FilesPreviewScreen(appBarString: 'Opening Themes - Introduction.mp3', path: 'https://scummbar.com/mi2/MI1-CD/01%20-%20Opening%20Themes%20-%20Introduction.mp3',),
-                      ),
-                    );
-                  },
-                  text: "Audio Preview",
-                ),
-                _buildItem(
-                  context,
-                  onPressed: () {
-                    const path = 'https://drive.google.com/file/d/1WARMcVTn29h_VPglToLrXVsqdN7auoK7/view?usp=drive_link';
-                    const name = 'Financial.zip';
-                    _createFileOfUrl(path, name).then((f) {
-                        openFileLocal(context, f.path, (success) async {
-                          if (!success) {
-                            Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FilesPreviewScreen(appBarString: name, path: f.path,),
-                            ),
-                          );
-                          }
-                        });
-                    });
-                    
-                  },
-                  text: "Unknow Preview",
-                ),
+                if (_isDownloading)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      color: Colors.black12,
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                      child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -130,7 +157,10 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<File> _createFileOfUrl(String path, String name) async {
-    Completer<File> completer = Completer();
+    setState(() {
+      _isDownloading = true;
+    });
+    Completer<File> completer = Completer<File>();
     if (kDebugMode) {
       print("Start download file from internet!");
     }
@@ -150,9 +180,14 @@ class HomeScreen extends StatelessWidget {
       await file.writeAsBytes(bytes, flush: true);
       completer.complete(file);
     } catch (e) {
+      setState(() {
+        _isDownloading = false;
+      });
       throw Exception('Error parsing asset file!');
     }
-
+    setState(() {
+      _isDownloading = false;
+    });
     return completer.future;
   }
 
@@ -169,7 +204,7 @@ class HomeScreen extends StatelessWidget {
       return;
     }
     final isPhysicalDevice = await DeviceInfoUtils.isPhysicalDevice ?? true;
-    if (!isPhysicalDevice) {
+    if (Platform.isIOS && !isPhysicalDevice) {
       if (kDebugMode) {
         print('[DownloadFileMixin][openFile] May crash when open file on Simulator');
       }
@@ -182,11 +217,12 @@ class HomeScreen extends StatelessWidget {
     // More infomation: https://www.youtube.com/watch?v=O0UwUF2DgQc&t=139s
     // If this app need permission, reopen it again
 
-    if (path.endsWith('.apk') || (await OpenFile.open(path)).type == ResultType.noAppToOpen) {
+    if ((await OpenFile.open(path)).type == ResultType.done ) {
+      callBack(true);
+    } else {
       callBack(false);
       Fluttertoast.showToast(msg: "Preview not available");
     }
-    callBack(true);
   }
 
   Widget _buildItem(context,

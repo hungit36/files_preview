@@ -45,6 +45,7 @@ Widget openFile({required String path, required String fileName, Color? iconColo
     case 'mkv':
     case 'flv':
     case 'wmv':
+    case 'ogg':
       type = FilesType.Video;
       break;
     case 'mp3':
@@ -54,7 +55,6 @@ Widget openFile({required String path, required String fileName, Color? iconColo
     case 'alac':
     case 'wma':
     case 'atff':
-    case 'ogg':
       type = FilesType.Audio;
       break;
     default: break;
