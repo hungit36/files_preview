@@ -32,8 +32,10 @@ class _FilesPreviewScreenState extends State<FilesPreviewScreen> {
               child: Container(
                 color: Colors.white,
                 child: openFile(path: widget.path.replaceAll(' ', ''), formatTime: FormatTimeType.Normal, fileName: widget.appBarString, file: (file) {
-                  setState(() {
-                    _file = file;
+                  WidgetsBinding.instance.addPostFrameCallback((_)  {
+                    setState(() {
+                       _file = file;
+                    });
                   });
                 },)
               ),

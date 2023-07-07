@@ -106,48 +106,53 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
         DeviceOrientation.portraitUp,
       ],
     );
-    if (widget.type == FilesType.Unknow) return;
+    if (widget.type == FilesType.Unknow){
+      widget.file(File(widget.path));
+      return;
+    }
     _createFileOfUrl().then((f) {
       widget.file(f);
-        switch (widget.type) {
-          case FilesType.Pdf:
+      switch (widget.type) {
+        case FilesType.Pdf:
+          setState(() {
+            _remotePDFpath = f.path;
+            _updatePage();
+          });
+          _focusNode.addListener(() {
+            if (_focusNode.hasFocus) {
+              if(_focusNode.hasFocus) {
+              _pageController.selection = TextSelection(baseOffset: 0, extentOffset: _pageController.text.length);
+            }
+            }
+          });
+          break;
+        case FilesType.Audio:
+        _audio.setUrl(           // Load a URL
+          widget.path
+        ).then((value) {
+          setState(() {});
+          _audio.positionStream.listen((event) {
             setState(() {
-              _remotePDFpath = f.path;
-              _updatePage();
-            });
-            _focusNode.addListener(() {
-              if (!_focusNode.hasFocus) {
-                
+              if (_audio.position == _audio.duration) {
+                _audio.stop();
               }
             });
-            break;
-          case FilesType.Audio:
-          _audio.setUrl(           // Load a URL
-            widget.path
-          ).then((value) {
+          });
+        }); 
+        break;
+        case FilesType.Video:
+          _videoController = VideoPlayerController.networkUrl(Uri.parse(
+          widget.path))
+          ..initialize().then((_) {
+            // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
             setState(() {});
-            _audio.positionStream.listen((event) {
-              setState(() {
-                if (_audio.position == _audio.duration) {
-                  _audio.stop();
-                }
-              });
-            });
-          }); 
-          break;
-          case FilesType.Video:
-            _videoController = VideoPlayerController.networkUrl(Uri.parse(
-            widget.path))
-            ..initialize().then((_) {
-              // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+            _videoController.addListener(() {                       //custom Listner
               setState(() {});
-              _videoController.addListener(() {                       //custom Listner
-                setState(() {});
-              });
             });
-            break;
-          default:
-        }
+          });
+          break;
+        default:
+      }
     });
   }
 
@@ -475,9 +480,15 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
                                 textAlign: TextAlign.center,
                                 controller: _pageController,
                                 onTapOutside: (_) async {
+                                  _focusNode.unfocus();
                                   int page = int.parse(_pageController.text);
-                                  if (page < 1) _currentPage = 0;
-                                  if (page > _pages) _currentPage = _pages - 1;
+                                  if (page < 1) {
+                                    _currentPage = 0;
+                                  } else if (page > _pages) {
+                                    _currentPage = _pages - 1;
+                                  } else {
+                                    _currentPage = page - 1;
+                                  }
                                   _updatePage();
                                   await snapshot.data!.setPage(_currentPage);
                                 },
