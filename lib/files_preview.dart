@@ -2,7 +2,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:files_preview/video_full_screen.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:files_preview/common/common_wrapper.dart';
@@ -18,7 +20,7 @@ class FilesPreview {
   }
 }
 
-Widget openFile({required String path, required String fileName, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45), required FutureOr<void> Function(File) file}) {
+Widget openFile({required String path, required String fileName, Color? iconColor, FormatTimeType formatTime = FormatTimeType.Full, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45), required FutureOr<void> Function(File) file}) {
   final extension = path.split('.').last.split('?').first;
   FilesType type = FilesType.Other;
   switch (extension.toLowerCase()) {
@@ -55,12 +57,12 @@ Widget openFile({required String path, required String fileName, TextStyle textS
       break;
     default: break;
   }
-  return PreviewScreen(path: path, type: type, textStyle: textStyle, empty: empty, errorStype: errorStype, file: file, fileName: fileName);
+  return PreviewScreen(path: path, type: type, iconColor: iconColor, textStyle: textStyle, formatTime: formatTime, empty: empty, errorStype: errorStype, file: file, fileName: fileName);
 }
 // ignore: constant_identifier_names
 enum FilesType {Pdf, Image, Video, Audio, Other}
 class PreviewScreen extends StatefulWidget {
-  const PreviewScreen({super.key, required this.path, required this.fileName, required this.type, required this.textStyle, required this.errorStype, this.empty, required this.file});
+  const PreviewScreen({super.key, required this.path, this.iconColor, this.formatTime = FormatTimeType.Full, required this.fileName, required this.type, required this.textStyle, required this.errorStype, this.empty, required this.file});
   final String path;
   final String fileName;
   final FilesType type;
@@ -68,6 +70,8 @@ class PreviewScreen extends StatefulWidget {
   final TextStyle errorStype;
   final FutureOr<void> Function(File) file;
   final Widget? empty;
+  final FormatTimeType formatTime;
+  final Color? iconColor;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -94,6 +98,12 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    SystemChrome.setPreferredOrientations(
+      [
+        DeviceOrientation.portraitUp,
+      ],
+    );
     createFileOfPdfUrl().then((f) {
       widget.file(f);
         switch (widget.type) {
@@ -147,14 +157,6 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
       File(_remotePDFpath).delete();
     }
     super.dispose();
-  }
-
-  String formatTime(int value) {
-    int sec = value % 60;
-    int min = (value / 60).floor();
-    String minute = min.toString().length <= 1 ? "0$min" : "$min";
-    String second = sec.toString().length <= 1 ? "0$sec" : "$sec";
-    return "$minute : $second";
   }
 
   @override
@@ -228,47 +230,77 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
           ),
         ),
         Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        IconButton(
-            icon: Icon(_videoController.value.isPlaying ? Icons.pause : Icons.play_arrow),
-            onPressed: () {
-              setState(() {
-                _videoController.value.isPlaying ? _videoController.pause() : _videoController.play();
-              });
-            }),
-          Text(
-            formatTime(_videoController.value.position.inSeconds),
-              style: widget.textStyle,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            IconButton(
+                icon: Icon(_videoController.value.isPlaying ? Icons.pause : Icons.play_arrow),
+                onPressed: () {
+                  setState(() {
+                    _videoController.value.isPlaying ? _videoController.pause() : _videoController.play();
+                  });
+                }),
+              Text(
+                _videoController.value.position.inSeconds.formatTime(widget.formatTime),
+                  style: widget.textStyle,
+                ),
+                Expanded(
+                  child: Slider(
+                    activeColor: Colors.black,
+                    thumbColor: Colors.black,
+                    inactiveColor: Colors.black26,
+                    value: _videoController.value.position.inSeconds.toDouble(),
+                    max: _videoController.value.duration.inSeconds.toDouble(),
+                    // divisions: 5,
+                    label: _videoController.value.position.inSeconds.toString(),
+                    onChanged: (double value) {
+                      setState(() {
+                        _videoController.seekTo(Duration(seconds: value.toInt()));
+                      });
+                    },
+                  ),
+                ),
+              Text(
+                _videoController.value.duration.inSeconds.formatTime(widget.formatTime),
+                  style: widget.textStyle,
+                ),
+              IconButton(
+                icon: Icon(Icons.fullscreen),
+                onPressed: _pushFullScreenVideo
+                ),
+              ],
             ),
-            Slider(
-              activeColor: Colors.black,
-              thumbColor: Colors.black,
-              inactiveColor: Colors.black26,
-              value: _videoController.value.position.inSeconds.toDouble(),
-              max: _videoController.value.duration.inSeconds.toDouble(),
-              // divisions: 5,
-              label: _videoController.value.position.inSeconds.toString(),
-              onChanged: (double value) {
-                setState(() {
-                  _videoController.seekTo(Duration(seconds: value.toInt()));
-                });
-              },
-            ),
-          Text(
-            formatTime(_videoController.value.duration.inSeconds),
-              style: widget.textStyle,
-            ),
-           IconButton(
-            icon: Icon(Icons.fullscreen),
-            onPressed: () {
-              setState(() {
-                
-              });
-            }),
-          ],
-        )
       ],
+    );
+  }
+
+  Future<void> _pushFullScreenVideo() async {
+    //This will help you to push fullscreen view of video player on top of current page
+
+    Navigator.of(context)
+        .push(
+      PageRouteBuilder(
+        opaque: false,
+        settings: const RouteSettings(),
+        pageBuilder: (
+          BuildContext context,
+          Animation<double> animation,
+          Animation<double> secondaryAnimation,
+        ) {
+          return VideoFullScreen(videoController: _videoController, textStyle: widget.textStyle, formatTime: widget.formatTime);
+        },
+      ),
+    ).then(
+      (value) {
+
+    //This will help you to set previous Device orientations of screen so App will continue for portrait mode
+
+        SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+        SystemChrome.setPreferredOrientations(
+          [
+            DeviceOrientation.portraitUp,
+          ],
+        );
+      },
     );
   }
 
@@ -283,46 +315,48 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
         Expanded(child: 
           SvgPicture.asset('assets/audio.svg', width: MediaQuery.of(context).size.width - 50*2,),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            IconButton(
-                icon: Icon( _audio.playing ? Icons.pause : Icons.play_arrow,),
-                onPressed: () {
-                  _audio.playing ?  _audio.pause() : _audio.play();
-                  if (_audio.position == _audio.duration) {
-                      _audio.seek(Duration.zero);
-                       _audio.play();
-                    }
-                  setState(() {});
-                }),
-            Text(
-              formatTime(_audio.position.inSeconds),
-              style: widget.textStyle,
-            ),
-            SizedBox(
-              width: MediaQuery.of(context).size.width*0.55,
-              child: Slider(
-                activeColor: Colors.black,
-                inactiveColor: Colors.black26,
-                thumbColor: Colors.black,
-                    value: _audio.position.inSeconds.toDouble(),
-                    max: _audio.duration?.inSeconds.toDouble() ?? 0,
-                    // divisions: 5,
-                    label: _videoController.value.position.inSeconds.toString(),
-                    onChanged: (double value) {
-                      setState(() {
-                        _audio.seek(Duration(seconds: value.toInt()));
-                      });
-                    },
-                  ),
-            ),
-            Text(
-              formatTime(_audio.duration?.inSeconds ?? 0),
-              style: widget.textStyle,
-            ),
-          ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              IconButton(
+                  icon: Icon( _audio.playing ? Icons.pause : Icons.play_arrow, color: widget.iconColor != null ? widget.iconColor!.withOpacity(0.26) : Colors.black,),
+                  onPressed: () {
+                    _audio.playing ?  _audio.pause() : _audio.play();
+                    if (_audio.position == _audio.duration) {
+                        _audio.seek(Duration.zero);
+                         _audio.play();
+                      }
+                    setState(() {});
+                  }),
+              Text(
+                _audio.position.inSeconds.formatTime(widget.formatTime),
+                style: widget.textStyle,
+              ),
+              Expanded(
+                child: Slider(
+                  activeColor: widget.iconColor != null ? widget.iconColor! : Colors.black,
+                  inactiveColor: widget.iconColor != null ? widget.iconColor!.withOpacity(0.26) : Colors.black26,
+                  thumbColor: widget.iconColor != null ? widget.iconColor! : Colors.black,
+                      value: _audio.position.inSeconds.toDouble(),
+                      max: _audio.duration?.inSeconds.toDouble() ?? 0,
+                      // divisions: 5,
+                      label: _videoController.value.position.inSeconds.toString(),
+                      onChanged: (double value) {
+                        setState(() {
+                          _audio.seek(Duration(seconds: value.toInt()));
+                        });
+                      },
+                    ),
+              ),
+              Text(
+                (_audio.duration?.inSeconds ?? 0).formatTime(widget.formatTime),
+                style: widget.textStyle,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -343,8 +377,8 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
         children: <Widget>[
           PDFView(
             filePath: _remotePDFpath,
-            enableSwipe: false,
-            swipeHorizontal: true,
+            enableSwipe: true,
+            swipeHorizontal: false,
             autoSpacing: false,
             pageFling: true,
             pageSnap: true,
@@ -498,5 +532,24 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
     }
 
     return completer.future;
+  }
+}
+// ignore: constant_identifier_names
+enum FormatTimeType {Full, Normal, Short}
+extension FormatTime  on int {
+  String formatTime(FormatTimeType type) {
+    int sec = this % 60;
+    int min = (this / 60).floor();
+    int hrs = (this / 3600).floor();
+    String hour = hrs.toString().length <= 1 ? "0$hrs" : "$hrs";
+    String minute = min.toString().length <= 1 ? "0$min" : "$min";
+    String second = sec.toString().length <= 1 ? "0$sec" : "$sec";
+    switch (type) {
+      case FormatTimeType.Normal:
+        return "$minute : $second";
+      case FormatTimeType.Short:
+        return second;
+      default: return "$hour : $minute : $second";
+    }
   }
 }
