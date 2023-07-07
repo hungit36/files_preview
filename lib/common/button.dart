@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ButtonNode extends StatelessWidget {
-  const ButtonNode({
+  const ButtonNode({super.key, 
     required this.title,
     required this.onPressed,
   });
@@ -32,10 +32,10 @@ class ButtonNode extends StatelessWidget {
             ),
             child: ElevatedButton(
               onPressed: onPressed,
-              child: const Text("Open"),
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all(Colors.amber),
               ),
+              child: const Text("Open"),
             ),
           )
         ],

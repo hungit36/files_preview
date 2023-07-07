@@ -66,7 +66,7 @@ class _VideoFullScreenState extends State<VideoFullScreen> {
                           child: VideoPlayer(widget.videoController),
                         ),
                         Positioned(
-                          bottom: 0,
+                          bottom: 16,
                           left: 16,
                           right: 16,
                           child: Row(

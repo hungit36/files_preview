@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'files_preview'
-  s.version          = '0.0.3'
+  s.version          = '0.0.4'
   s.summary          = 'A Flutter plugin view file.'
   s.description      = <<-DESC
 A new Flutter plugin project.

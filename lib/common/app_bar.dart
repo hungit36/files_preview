@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class AppBarCustom extends StatelessWidget {
-  const AppBarCustom({required this.title, this.showGoBack = false, this.align = TextAlign.left, this.share}) : super();
+  const AppBarCustom({super.key, required this.title, this.showGoBack = false, this.align = TextAlign.left, this.share});
 
   final String title;
   final bool showGoBack;
@@ -78,7 +78,7 @@ class AppBarLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      body: Container(
+      body: SizedBox(
         height: MediaQuery.of(context).size.height,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

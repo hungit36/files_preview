@@ -22,7 +22,7 @@ class FilesPreview {
 
 Widget openFile({required String path, required String fileName, Color? iconColor, FormatTimeType formatTime = FormatTimeType.Full, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45), required FutureOr<void> Function(File) file}) {
   final extension = path.split('.').last.split('?').first;
-  FilesType type = FilesType.Other;
+  FilesType type = FilesType.Unknow;
   switch (extension.toLowerCase()) {
     case 'pdf':
       type = FilesType.Pdf;
@@ -34,16 +34,17 @@ Widget openFile({required String path, required String fileName, Color? iconColo
     case 'tiff':
     case 'gif':
     case 'heic':
+    case 'tif':
       type = FilesType.Image;
       break;
     case 'mp4':
     case 'webm':
-    case 'ogg':
     case 'mov':
     case 'hevc':
     case 'avi':
     case 'mkv':
     case 'flv':
+    case 'wmv':
       type = FilesType.Video;
       break;
     case 'mp3':
@@ -53,6 +54,7 @@ Widget openFile({required String path, required String fileName, Color? iconColo
     case 'alac':
     case 'wma':
     case 'atff':
+    case 'ogg':
       type = FilesType.Audio;
       break;
     default: break;
@@ -60,7 +62,7 @@ Widget openFile({required String path, required String fileName, Color? iconColo
   return PreviewScreen(path: path, type: type, iconColor: iconColor, textStyle: textStyle, formatTime: formatTime, empty: empty, errorStype: errorStype, file: file, fileName: fileName);
 }
 // ignore: constant_identifier_names
-enum FilesType {Pdf, Image, Video, Audio, Other}
+enum FilesType {Pdf, Image, Video, Audio, Unknow}
 class PreviewScreen extends StatefulWidget {
   const PreviewScreen({super.key, required this.path, this.iconColor, this.formatTime = FormatTimeType.Full, required this.fileName, required this.type, required this.textStyle, required this.errorStype, this.empty, required this.file});
   final String path;
@@ -104,7 +106,8 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
         DeviceOrientation.portraitUp,
       ],
     );
-    createFileOfPdfUrl().then((f) {
+    if (widget.type == FilesType.Unknow) return;
+    _createFileOfUrl().then((f) {
       widget.file(f);
         switch (widget.type) {
           case FilesType.Pdf:
@@ -264,7 +267,7 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
                   style: widget.textStyle,
                 ),
               IconButton(
-                icon: Icon(Icons.fullscreen),
+                icon: const Icon(Icons.fullscreen),
                 onPressed: _pushFullScreenVideo
                 ),
               ],
@@ -396,22 +399,30 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
               setState(() {
                 _errorMessage = error.toString();
               });
-              print(error.toString());
+              if (kDebugMode) {
+                print(error.toString());
+              }
             },
             onPageError: (page, error) {
               setState(() {
                 _errorMessage = '$page: ${error.toString()}';
               });
-              print('$page: ${error.toString()}');
+              if (kDebugMode) {
+                print('$page: ${error.toString()}');
+              }
             },
             onViewCreated: (PDFViewController pdfViewController) {
               _controller.complete(pdfViewController);
             },
             onLinkHandler: (String? uri) {
-              print('goto uri: $uri');
+              if (kDebugMode) {
+                print('goto uri: $uri');
+              }
             },
             onPageChanged: (int? page, int? total) {
-              print('page change: $page/$total');
+              if (kDebugMode) {
+                print('page change: $page/$total');
+              }
               setState(() {
                 _currentPage = page ?? 0;
                 _updatePage();
@@ -513,16 +524,26 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
       );
   }
 
-  Future<File> createFileOfPdfUrl() async {
+  Future<File> _createFileOfUrl() async {
     Completer<File> completer = Completer();
-    print("Start download file from internet!");
+    if (kDebugMode) {
+      print("Start download file from internet!");
+    }
     try {
       var request = await HttpClient().getUrl(Uri.parse(widget.path));
       var response = await request.close();
       var bytes = await consolidateHttpClientResponseBytes(response);
       var dir = await getApplicationDocumentsDirectory();
-      print("Download files");
-      print("${dir.path}/${widget.fileName}");
+      if (kDebugMode) {
+        print("Download files");
+      }
+      if (kDebugMode) {
+        print("${dir.path}/${widget.fileName}");
+      }
+      final file_size = response.headers["content-length"];
+      if (kDebugMode) {
+        print('file_size: $file_size');
+      }
       File file = File("${dir.path}/${widget.fileName}");
 
       await file.writeAsBytes(bytes, flush: true);

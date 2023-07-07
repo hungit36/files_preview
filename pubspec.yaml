@@ -1,6 +1,6 @@
 name: files_preview
 description: A new plugin to handle view file.
-version: 0.0.3
+version: 0.0.4
 repository: https://github.com/hungit36/files_preview
 
 environment:
