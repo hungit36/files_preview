@@ -1,3 +1,6 @@
+## 0.0.3
+* View video full screen and format time
+
 ## 0.0.2
 * Add share
 

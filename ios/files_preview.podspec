@@ -4,14 +4,14 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'files_preview'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '0.0.3'
+  s.summary          = 'A Flutter plugin view file.'
   s.description      = <<-DESC
 A new Flutter plugin project.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'http://khohatsi.com'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Hưng Nguyễn' => 'hungnguyen.it36@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
