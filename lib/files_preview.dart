@@ -98,14 +98,15 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
   String _remotePDFpath = '';
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+  }
+
+  @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-    SystemChrome.setPreferredOrientations(
-      [
-        DeviceOrientation.portraitUp,
-      ],
-    );
+    WidgetsBinding.instance.addObserver(this);
+   
     if (widget.type == FilesType.Unknow){
       widget.file(File(widget.path));
       return;
@@ -159,6 +160,7 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
   @override
   void dispose() {
     _videoController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     _audio.dispose();
     _focusNode.dispose();
     if (File(_remotePDFpath).existsSync()) {
