@@ -1,3 +1,6 @@
+## 0.0.5
+* Support view more extension image
+
 ## 0.0.4
 * add more file extension
 

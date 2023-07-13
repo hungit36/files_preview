@@ -3,7 +3,7 @@ PODS:
     - Flutter
   - device_info_plus (0.0.1):
     - Flutter
-  - files_preview (0.0.3):
+  - files_preview (0.0.4):
     - Flutter
   - Flutter (1.0.0)
   - flutter_pdfview (1.0.2):
@@ -68,7 +68,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   audio_session: 4f3e461722055d21515cf3261b64c973c062f345
   device_info_plus: 7545d84d8d1b896cb16a4ff98c19f07ec4b298ea
-  files_preview: 837f349bc95d796cfac6f5e9c3741b7d54180485
+  files_preview: a67b27b34fdb96d3a6f4c4d070bdf65044551a4e
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_pdfview: 25f53dd6097661e6395b17de506e6060585946bd
   fluttertoast: fafc4fa4d01a6a9e4f772ecd190ffa525e9e2d9c

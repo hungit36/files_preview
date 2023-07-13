@@ -65,10 +65,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildItem(
                     context,
                     onPressed: () {
+                      final name = '9b5784d9e453fc741dfe0cc6aeee7f83ae42.tiff';
+                      final path = 'https://tabula-bucket-stg.s3.us-west-2.amazonaws.com/others/9b5784d9e453fc741dfe0cc6aeee7f83ae42.tiff';
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FilesPreviewScreen(appBarString: 'image-colorful-galaxy-sky-generative-ai_791316-9864.jpg', path: 'https://img.freepik.com/premium-photo/image-colorful-galaxy-sky-generative-ai_791316-9864.jpg?w=2000',),
+                          builder: (context) =>  FilesPreviewScreen(
+                            appBarString: name, 
+                            path: path, 
+                            openFileSuccess: (success) {
+                            if (!success) {
+                              Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FilesPreviewScreen(appBarString: name, path: path,),
+                              ),
+                            );
+                            }
+                          },),
                         ),
                       );
                     },
@@ -125,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                             }
-                          });
+                          },);
                       });
                       
                     },

@@ -13,6 +13,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'files_preview_platform_interface.dart';
+import 'package:http/http.dart' as http;
 
 class FilesPreview {
   Future<String?> getPlatformVersion() {
@@ -20,7 +21,7 @@ class FilesPreview {
   }
 }
 
-Widget openFile({required String path, required String fileName, Color? iconColor, FormatTimeType formatTime = FormatTimeType.Full, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45), required FutureOr<void> Function(File) file}) {
+Widget openFile({required String path, required String fileName, Color? iconColor, FormatTimeType formatTime = FormatTimeType.Full, TextStyle textStyle = const TextStyle(color: Colors.black), Widget? empty, TextStyle errorStype = const TextStyle(color: Colors.black45), required FutureOr<void> Function(File) file, void Function(bool)? openFileSuccess}) {
   final extension = path.split('.').last.split('?').first;
   FilesType type = FilesType.Unknow;
   switch (extension.toLowerCase()) {
@@ -59,12 +60,12 @@ Widget openFile({required String path, required String fileName, Color? iconColo
       break;
     default: break;
   }
-  return PreviewScreen(path: path, type: type, iconColor: iconColor, textStyle: textStyle, formatTime: formatTime, empty: empty, errorStype: errorStype, file: file, fileName: fileName);
+  return PreviewScreen(path: path, type: type, openFileSuccess: openFileSuccess, iconColor: iconColor, textStyle: textStyle, formatTime: formatTime, empty: empty, errorStype: errorStype, file: file, fileName: fileName);
 }
 // ignore: constant_identifier_names
 enum FilesType {Pdf, Image, Video, Audio, Unknow}
 class PreviewScreen extends StatefulWidget {
-  const PreviewScreen({super.key, required this.path, this.iconColor, this.formatTime = FormatTimeType.Full, required this.fileName, required this.type, required this.textStyle, required this.errorStype, this.empty, required this.file});
+  const PreviewScreen({super.key, this.openFileSuccess, required this.path, this.iconColor, this.formatTime = FormatTimeType.Full, required this.fileName, required this.type, required this.textStyle, required this.errorStype, this.empty, required this.file});
   final String path;
   final String fileName;
   final FilesType type;
@@ -74,6 +75,7 @@ class PreviewScreen extends StatefulWidget {
   final Widget? empty;
   final FormatTimeType formatTime;
   final Color? iconColor;
+  final void Function(bool)? openFileSuccess;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -96,6 +98,7 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
   VideoPlayerController _videoController = VideoPlayerController.networkUrl(Uri());
 
   String _remotePDFpath = '';
+  Uint8List? _bytes;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -159,6 +162,7 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
 
   @override
   void dispose() {
+    _bytes = null;
     _videoController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _audio.dispose();
@@ -199,11 +203,17 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
   }
 
   Widget _buildImage() {
+    if (_bytes == null) {
+      return const Center(
+              child: CircularProgressIndicator(),
+            );
+    }
     return CommonRouteWrapper(
+      openFileSuccess: (success) {
+        widget.openFileSuccess?.call(success);
+      },
       minScale: 0.2,
-        imageProvider: NetworkImage(
-          widget.path,
-        ),
+        imageData: _bytes!,
         loadingBuilder: (context, event) {
           if (event == null) {
             return const Center(
@@ -304,7 +314,6 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
 
     //This will help you to set previous Device orientations of screen so App will continue for portrait mode
 
-        SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
         SystemChrome.setPreferredOrientations(
           [
             DeviceOrientation.portraitUp,
@@ -406,30 +415,26 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
               setState(() {
                 _errorMessage = error.toString();
               });
-              if (kDebugMode) {
-                print(error.toString());
-              }
+              debugPrint(error.toString());
+              
             },
             onPageError: (page, error) {
               setState(() {
                 _errorMessage = '$page: ${error.toString()}';
               });
-              if (kDebugMode) {
-                print('$page: ${error.toString()}');
-              }
+              debugPrint('$page: ${error.toString()}');
+              
             },
             onViewCreated: (PDFViewController pdfViewController) {
               _controller.complete(pdfViewController);
             },
             onLinkHandler: (String? uri) {
-              if (kDebugMode) {
-                print('goto uri: $uri');
-              }
+              debugPrint('goto uri: $uri');
+              
             },
             onPageChanged: (int? page, int? total) {
-              if (kDebugMode) {
-                print('page change: $page/$total');
-              }
+              debugPrint('page change: $page/$total');
+              
               setState(() {
                 _currentPage = page ?? 0;
                 _updatePage();
@@ -539,29 +544,29 @@ class _PreviewScreenState extends State<PreviewScreen> with WidgetsBindingObserv
 
   Future<File> _createFileOfUrl() async {
     Completer<File> completer = Completer();
-    if (kDebugMode) {
-      print("Start download file from internet!");
-    }
-    try {
-      var request = await HttpClient().getUrl(Uri.parse(widget.path));
-      var response = await request.close();
-      var bytes = await consolidateHttpClientResponseBytes(response);
-      var dir = await getApplicationDocumentsDirectory();
-      if (kDebugMode) {
-        print("Download files");
-      }
-      if (kDebugMode) {
-        print("${dir.path}/${widget.fileName}");
-      }
-      final file_size = response.headers["content-length"];
-      if (kDebugMode) {
-        print('file_size: $file_size');
-      }
-      File file = File("${dir.path}/${widget.fileName}");
+    debugPrint("Start download file from internet!");
+    
+    var dir = await getApplicationDocumentsDirectory();
+    debugPrint("Download files");
+    debugPrint("${dir.path}/${widget.fileName}");
+    
+    
+    final response = await http
+      .get(Uri.parse(widget.path));
 
-      await file.writeAsBytes(bytes, flush: true);
+    if (response.statusCode == 200) {
+      // If the server did return a 200 OK response,
+      // then parse the JSON.
+      
+      File file = File("${dir.path}/${widget.fileName}");
+      setState(() {
+        _bytes = response.bodyBytes;
+      });
+      await file.writeAsBytes(response.bodyBytes, flush: true);
       completer.complete(file);
-    } catch (e) {
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
       throw Exception('Error parsing asset file!');
     }
 

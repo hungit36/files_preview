@@ -1,6 +1,6 @@
 name: files_preview
 description: A new plugin to handle view file.
-version: 0.0.4
+version: 0.0.5
 repository: https://github.com/hungit36/files_preview
 
 environment:
@@ -15,8 +15,10 @@ dependencies:
   flutter_svg: ^2.0.5
   just_audio: ^0.9.34
   path_provider: ^2.0.15
-  photo_view: ^0.14.0
   video_player: ^2.7.0
+  archive: ^3.3.7
+  http: ^0.13.6
+  xml: ^6.2.2
   
 
 dev_dependencies:

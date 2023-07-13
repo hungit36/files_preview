@@ -7,9 +7,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 
 class FilesPreviewScreen extends StatefulWidget {
-  const FilesPreviewScreen({super.key, required this.appBarString, required this.path});
+  const FilesPreviewScreen({super.key, required this.appBarString, required this.path, this.openFileSuccess});
   final String path;
   final String appBarString;
+  final void Function(bool)? openFileSuccess;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -37,7 +38,7 @@ class _FilesPreviewScreenState extends State<FilesPreviewScreen> {
                        _file = file;
                     });
                   });
-                },)
+                }, openFileSuccess: widget.openFileSuccess,)
               ),
             ),
           ],

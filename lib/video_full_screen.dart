@@ -35,7 +35,6 @@ class _VideoFullScreenState extends State<VideoFullScreen> {
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
     SystemChrome.setPreferredOrientations(
       [
         DeviceOrientation.portraitUp,
